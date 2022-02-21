@@ -6,7 +6,6 @@ const nextClueWaitTime = 1000; //how long to wait before starting playback of th
 var pattern = [2, 2, 4, 3, 2, 1, 2, 4];
 var progress = 0; 
 var gamePlaying = false;
-
 var tonePlaying = false;
 var volume = 0.5;  //must be between 0.0 and 1.0
 var guessCounter = 0;
@@ -18,7 +17,7 @@ function startGame(){
     progress = 0;
     gamePlaying = true;
 
-  // swap the Start and Stop buttons
+// swap the Start and Stop buttons
 document.getElementById("startBtn").classList.add("hidden");
 document.getElementById("stopBtn").classList.remove("hidden")
   playClueSequence();
@@ -44,6 +43,7 @@ const freqMap = {
 function playTone(btn,len){ 
   o.frequency.value = freqMap[btn]
   g.gain.setTargetAtTime(volume,context.currentTime + 0.05,0.025)
+  context.resume()
   tonePlaying = true
   setTimeout(function(){
     stopTone()
@@ -51,8 +51,10 @@ function playTone(btn,len){
 }
 function startTone(btn){
   if(!tonePlaying){
+    context.resume()
     o.frequency.value = freqMap[btn]
     g.gain.setTargetAtTime(volume,context.currentTime + 0.05,0.025)
+    context.resume()
     tonePlaying = true
   }
 }
@@ -63,6 +65,7 @@ function stopTone(){
 
 //Page Initialization
 // Init Sound Synthesizer
+var AudioContext = window.AudioContext || window.webkitAudioContext
 var context = new AudioContext()
 var o = context.createOscillator()
 var g = context.createGain()
@@ -87,11 +90,12 @@ function playSingleClue(btn){
 }
 
 function playClueSequence(){
+    context.resume()
   guessCounter = 0;
-  let delay = nextClueWaitTime; //set delay to initial wait time
-  for(let i=0;i<=progress;i++){ // for each clue that is revealed so far
+  let delay = nextClueWaitTime; 
+  for(let i=0;i<=progress;i++){ 
     console.log("play single clue: " + pattern[i] + " in " + delay + "ms")
-    setTimeout(playSingleClue,delay,pattern[i]) // set a timeout to play that clue
+    setTimeout(playSingleClue,delay,pattern[i]) 
     delay += clueHoldTime 
     delay += cluePauseTime;
   }
@@ -102,7 +106,7 @@ function loseGame(){
   alert("Game Over. You lost.");
 }
 
-function wubGame(){
+function winGame(){
   stopGame();
   alert("Game Over. You won!.");
 }
@@ -113,25 +117,25 @@ function guess(btn){
     return;
   }
 
-  if(pattern[guessCounter] == btn){
-    //Guess was correct!
+  if(btn == pattern[guessCounter]){
+ 
     if(guessCounter == progress){
-      if(progress == pattern.length - 1){
-        //GAME OVER: WIN!
-        winGame();
-      }else{
-        //Pattern correct. Add next segment
         progress++;
-        playClueSequence();
+      if(progress == pattern.length){
+       
+        winGame();
+        return;
       }
+   
+        playClueSequence();
+      
     }else{
-      //so far so good... check the next guess
+     
       guessCounter++;
     }
   }else{
-    //Guess was incorrect
-    //GAME OVER: LOSE!
+    
     loseGame();
+    return;
 }
 }
-
